@@ -4,5 +4,6 @@ com\webserver\RequestProcessor.class
 com\webserver\ConnectionHandler.class
 com\webserver\ThreadPoolManager.class
 com\webserver\SimpleServer.class
+com\webserver\StaticFileHandler.class
 com\webserver\Response.class
 com\webserver\WebServerApp.class

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Enterprise Web Server</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .feature { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; }
+        .stats { background: #e3f2fd; padding: 15px; border-radius: 8px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>🚀 Enterprise Multi-Threaded Web Server</h1>
+        <p>Built from scratch in Java with ❤️</p>
+    </header>
+
+    <div class="stats">
+        <h2>📊 Live Server Stats</h2>
+        <p id="time">Loading...</p>
+        <button onclick="loadStats()">Refresh Stats</button>
+        <button onclick="testConcurrency()">Test Multi-Threading</button>
+    </div>
+
+    <div class="feature">
+        <h3>✨ Features Implemented</h3>
+        <ul>
+            <li>✅ Multi-threaded request handling</li>
+            <li>✅ Thread pool management</li>
+            <li>✅ Static file serving</li>
+            <li>✅ HTTP protocol implementation</li>
+            <li>✅ Graceful shutdown</li>
+            <li>✅ Performance monitoring</li>
+        </ul>
+    </div>
+
+    <div class="feature">
+        <h3>🧪 Test Endpoints</h3>
+        <ul>
+            <li><a href="/hello">Hello Page</a></li>
+            <li><a href="/time">Current Time</a></li>
+            <li><a href="/stats">Server Statistics</a></li>
+            <li><a href="/slow">Slow Endpoint (3s)</a></li>
+        </ul>
+    </div>
+</div>
+
+<script>
+    function loadStats() {
+        fetch('/stats')
+            .then(response => response.text())
+            .then(html => {
+                // Extract stats from HTML response
+                document.getElementById('time').innerHTML = 'Stats refreshed at: ' + new Date().toLocaleTimeString();
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function testConcurrency() {
+        // Fire 5 requests simultaneously to test multi-threading
+        const promises = [];
+        for(let i = 0; i < 5; i++) {
+            promises.push(fetch('/time'));
+        }
+
+        Promise.all(promises).then(() => {
+            alert('🎉 Fired 5 concurrent requests! Check console for multi-threading in action.');
+        });
+    }
+
+    // Auto-refresh time every 5 seconds
+    setInterval(() => {
+        document.getElementById('time').innerHTML = 'Current time: ' + new Date().toLocaleString();
+    }, 5000);
+
+    // Initial load
+    loadStats();
+</script>
+</body>
+</html>
