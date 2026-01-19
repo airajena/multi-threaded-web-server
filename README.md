@@ -1,100 +1,98 @@
 # Multi-Threaded Web Server
 
-A **pure concurrency showcase** demonstrating low-level multithreading and systems programming skills in Java. Built from scratch without relying on high-level abstractions like `Executors.newFixedThreadPool()`.
+A high-performance HTTP server built from the ground up in Java, exploring low-level concurrency primitives and non-blocking I/O patterns. This project implements core threading concepts without relying on high-level abstractions like `Executors.newFixedThreadPool()`.
 
 [![Java](https://img.shields.io/badge/Java-17+-orange.svg)](https://openjdk.org/)
 [![Build](https://img.shields.io/badge/Build-Maven-blue.svg)](https://maven.apache.org/)
 
-## 🎯 Purpose
+## Why I Built This
 
-This project demonstrates **interview-ready** concurrency concepts commonly asked at MAANG and top product-based companies:
+I wanted to deeply understand how concurrent systems work under the hood. Instead of using Java's built-in `ExecutorService`, I implemented:
 
-- **Custom Thread Pool** - Hand-built without using Java's Executor framework
-- **Blocking Queue** - Implemented with `synchronized`, `wait()`, `notify()`
-- **Read-Write Lock** - Custom implementation with writer preference
-- **Rate Limiter** - Token bucket algorithm
-- **LRU Cache** - Thread-safe with O(1) operations
-- **Circuit Breaker** - Fault tolerance pattern
-- **NIO Event Loop** - Non-blocking I/O with Selector (like Netty)
+- A **thread pool from scratch** using `synchronized`, `wait()`, and `notify()`
+- A **blocking queue** that handles producer-consumer coordination
+- A **read-write lock** with writer preference to prevent starvation
+- A **rate limiter** using the token bucket algorithm
+- An **LRU cache** with O(1) operations and thread-safe access
+- A **circuit breaker** for fault tolerance
+- An **NIO event loop** similar to how Netty handles connections
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 src/main/java/com/webserver/
-├── core/                          # Thread Pool Implementation
-│   ├── CustomThreadPool.java      # Main thread pool (no Executors!)
-│   ├── BlockingTaskQueue.java     # Blocking queue with wait/notify
-│   ├── WorkerThread.java          # Worker lifecycle management
-│   └── RejectionPolicy.java       # ABORT, CALLER_RUNS, DISCARD policies
+├── core/                          # Thread Pool
+│   ├── CustomThreadPool.java      # Main pool implementation
+│   ├── BlockingTaskQueue.java     # Bounded blocking queue
+│   ├── WorkerThread.java          # Worker lifecycle
+│   └── RejectionPolicy.java       # Overflow handling strategies
 │
-├── concurrency/                   # Concurrency Primitives
-│   ├── TokenBucketRateLimiter.java    # Rate limiting
-│   ├── CustomReadWriteLock.java       # RW lock from scratch
-│   └── RequestTimeoutHandler.java     # Non-blocking timeouts
+├── concurrency/                   # Synchronization Primitives
+│   ├── TokenBucketRateLimiter.java
+│   ├── CustomReadWriteLock.java
+│   └── RequestTimeoutHandler.java
 │
-├── cache/                         # Caching Layer
-│   └── LRUCache.java              # Thread-safe LRU with eviction
+├── cache/
+│   └── LRUCache.java              # Thread-safe LRU cache
 │
-├── resilience/                    # Fault Tolerance
-│   └── CircuitBreaker.java        # CLOSED/OPEN/HALF_OPEN states
+├── resilience/
+│   └── CircuitBreaker.java        # Fault tolerance
 │
 ├── io/                            # I/O Layer
-│   ├── NioEventLoop.java          # Selector-based event loop
-│   ├── NioConnection.java         # Connection wrapper
-│   ├── ConnectionPool.java        # HTTP Keep-Alive pooling
-│   └── PooledConnection.java      # Pooled connection
+│   ├── NioEventLoop.java          # Non-blocking event loop
+│   ├── NioConnection.java
+│   ├── ConnectionPool.java        # Keep-Alive connection pooling
+│   └── PooledConnection.java
 │
-├── async/                         # Async Processing
+├── async/
 │   └── AsyncRequestProcessor.java # CompletableFuture pipeline
 │
-└── [Server classes]               # HTTP Server
-    ├── WebServerApp.java          # Entry point
-    ├── MultiThreadedServer.java   # Main server
-    ├── ConnectionHandler.java     # Request handler
-    └── RequestProcessor.java      # Demo endpoints
+└── [Server]
+    ├── WebServerApp.java
+    ├── MultiThreadedServer.java
+    ├── ConnectionHandler.java
+    └── RequestProcessor.java
 ```
 
-## 🚀 Quick Start
+## Getting Started
 
 ```bash
-# Clone and build
-git clone https://github.com/airajena/multi-threaded-web-server.git
-cd multi-threaded-web-server
+# Build
 mvn clean compile
 
-# Run with thread pool (default)
+# Run with thread pool mode (default)
 mvn exec:java
 
-# Or with NIO event loop
+# Run with NIO event loop
 mvn exec:java -Dexec.args="--nio"
 
-# Custom port and threads
+# Custom configuration
 mvn exec:java -Dexec.args="-p 8080 -t 20"
 ```
 
-## 🎮 Demo Endpoints
+## Demo Endpoints
 
-| Endpoint | Description |
-|----------|-------------|
-| `/` | Welcome page with links |
-| `/demo/threadpool` | Custom thread pool statistics |
-| `/demo/ratelimit` | Token bucket rate limiter status |
-| `/demo/cache` | LRU cache operations (`?key=foo&value=bar`) |
-| `/demo/circuit` | Circuit breaker state (`?fail=true` / `?reset=true`) |
-| `/demo/async` | Async request processing demo |
-| `/demo/all` | All concurrency stats |
-| `/demo/stress` | High-load endpoint for testing |
+Once the server is running, you can explore each component:
 
-## 🔧 Key Implementations
+| Endpoint | What it shows |
+|----------|---------------|
+| `http://localhost:8080/` | Welcome page |
+| `http://localhost:8080/demo/threadpool` | Pool size, active threads, completed tasks |
+| `http://localhost:8080/demo/ratelimit` | Available tokens, refill rate |
+| `http://localhost:8080/demo/cache?key=foo&value=bar` | Cache operations and hit rate |
+| `http://localhost:8080/demo/circuit` | Circuit breaker state |
+| `http://localhost:8080/demo/async` | Async processing pipeline |
+| `http://localhost:8080/demo/all` | All stats combined |
 
-### 1. Custom Thread Pool
+## How It Works
 
-Built from scratch without `Executors`:
+### Custom Thread Pool
+
+The thread pool doesn't use `Executors`. Instead, it manages worker threads directly:
 
 ```java
-// Uses custom BlockingTaskQueue with wait/notify
 public class CustomThreadPool {
-    private final BlockingTaskQueue taskQueue;  // Not java.util.concurrent!
+    private final BlockingTaskQueue taskQueue;
     private final WorkerThread[] workers;
     private final RejectionPolicy rejectionPolicy;
     
@@ -106,85 +104,82 @@ public class CustomThreadPool {
 }
 ```
 
-### 2. Token Bucket Rate Limiter
+The `BlockingTaskQueue` uses `wait()` and `notify()` for thread coordination:
 
 ```java
-public class TokenBucketRateLimiter {
-    public synchronized boolean tryAcquire() {
-        refill();  // Time-based token refill
-        if (currentTokens >= 1.0) {
-            currentTokens -= 1.0;
-            return true;
-        }
-        return false;
+public synchronized void put(Runnable task) throws InterruptedException {
+    while (size == capacity) {
+        wait();  // Block until space available
     }
+    buffer[tail] = task;
+    tail = (tail + 1) % capacity;
+    size++;
+    notifyAll();  // Wake waiting consumers
 }
 ```
 
-### 3. Custom Read-Write Lock
+### Token Bucket Rate Limiter
 
-With writer preference to prevent starvation:
+Allows burst traffic while maintaining an average rate:
 
 ```java
-public class CustomReadWriteLock {
-    private int readers = 0;
-    private int writers = 0;
-    private int writeRequests = 0;  // Writer preference
-    
-    public synchronized void lockRead() throws InterruptedException {
-        while (writers > 0 || writeRequests > 0) wait();
-        readers++;
+public synchronized boolean tryAcquire() {
+    refill();  // Add tokens based on elapsed time
+    if (currentTokens >= 1.0) {
+        currentTokens -= 1.0;
+        return true;
     }
+    return false;
 }
 ```
 
-### 4. LRU Cache with Eviction
+### Read-Write Lock
+
+Allows multiple readers but exclusive writers, with writer preference:
 
 ```java
-public class LRUCache<K, V> {
-    private final Map<K, Node<K, V>> cache;      // O(1) lookup
-    private final DoublyLinkedList<K, V> list;   // O(1) eviction
-    private final CustomReadWriteLock lock;       // Thread-safe
-}
-```
-
-### 5. Circuit Breaker
-
-```java
-public class CircuitBreaker {
-    enum State { CLOSED, OPEN, HALF_OPEN }
-    
-    public <T> T execute(Supplier<T> action) {
-        if (state == OPEN && resetTimeoutExpired()) {
-            state = HALF_OPEN;  // Test recovery
-        }
-        // Execute or throw CircuitOpenException
+public synchronized void lockRead() throws InterruptedException {
+    while (writers > 0 || writeRequests > 0) {
+        wait();  // Writers have priority
     }
+    readers++;
 }
 ```
 
-### 6. NIO Event Loop
+### Circuit Breaker
 
-Single-threaded, non-blocking I/O (like Netty):
+Prevents cascading failures with automatic recovery:
 
 ```java
-public class NioEventLoop implements Runnable {
-    private final Selector selector;
-    
-    public void run() {
-        while (running) {
-            selector.select();  // Block until events
-            for (SelectionKey key : selector.selectedKeys()) {
-                if (key.isAcceptable()) handleAccept(key);
-                if (key.isReadable()) handleRead(key);
-                if (key.isWritable()) handleWrite(key);
-            }
+public <T> T execute(Supplier<T> action) throws Exception {
+    if (state == OPEN && resetTimeoutExpired()) {
+        state = HALF_OPEN;  // Test if service recovered
+    }
+    if (state == OPEN) {
+        throw new CircuitOpenException("Circuit is open");
+    }
+    // Execute and track success/failure
+}
+```
+
+### NIO Event Loop
+
+Single-threaded, non-blocking I/O using Java's Selector:
+
+```java
+public void run() {
+    while (running) {
+        selector.select();  // Block until events
+        for (SelectionKey key : selector.selectedKeys()) {
+            if (key.isAcceptable()) handleAccept(key);
+            if (key.isReadable()) handleRead(key);
+            if (key.isWritable()) handleWrite(key);
         }
     }
 }
 ```
 
-## 📊 Load Testing
+## Load Testing
 
 ```bash
 # Using wrk
@@ -194,47 +189,28 @@ wrk -t4 -c100 -d30s http://localhost:8080/demo/stress
 ab -n 10000 -c 100 http://localhost:8080/demo/stress
 ```
 
-## 🧪 Testing
+## Running Tests
 
 ```bash
-# Run all tests
 mvn test
-
-# Run specific test
-mvn test -Dtest=CustomThreadPoolTest
-
-# Run benchmarks
-mvn clean install
-java -jar target/benchmarks.jar
 ```
 
-## 📚 Interview Topics Covered
+## Tech Stack
 
-| Topic | Implementation |
-|-------|---------------|
-| Thread Pool Internals | `CustomThreadPool`, `BlockingTaskQueue` |
-| Producer-Consumer | `BlockingTaskQueue` with `wait()`/`notify()` |
-| Read-Write Locks | `CustomReadWriteLock` with writer preference |
-| Rate Limiting | `TokenBucketRateLimiter` |
-| Caching | `LRUCache` with O(1) eviction |
-| Fault Tolerance | `CircuitBreaker` state machine |
-| Non-blocking I/O | `NioEventLoop` with `Selector` |
-| Async Programming | `AsyncRequestProcessor` with `CompletableFuture` |
-| Graceful Shutdown | Request draining in `MultiThreadedServer` |
-
-## 🛠️ Technologies
-
-- **Java 17** - Records, text blocks, pattern matching
-- **Maven** - Build and dependency management
+- **Java 17** - Records, text blocks, pattern matching switch
+- **Maven** - Build tool
 - **JUnit 5** - Testing
-- **JMH** - Benchmarking
+- **JMH** - Microbenchmarking
 
-## 👤 Author
+## What I Learned
 
-**Airaj Jena**
+Building this project taught me:
 
-- GitHub: [@airajena](https://github.com/airajena)
+1. **Thread coordination is tricky** - Getting `wait()`/`notify()` right requires careful thought about spurious wakeups and lost signals
+2. **Writer preference matters** - Without it, writers can starve in high-read scenarios
+3. **NIO is powerful but complex** - The Selector pattern enables handling thousands of connections with one thread
+4. **Graceful shutdown is harder than it sounds** - Draining in-flight requests while accepting no new ones requires coordination
 
-## 📄 License
+## License
 
-MIT License
+MIT
